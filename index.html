@@ -1,170 +1,813 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>J82 Daily Manpower Reporting</title><link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"><style>body{background:#eef3f8;padding:15px;font-family:Segoe UI,sans-serif}.hero{background:#0d6efd;color:#fff;padding:20px;border-radius:16px;margin-bottom:15px;box-shadow:0 4px 12px rgba(0,0,0,.15)}.card{border:none;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}.activity-card{border-left:5px solid #0d6efd}.btn{border-radius:10px;font-weight:600}#addBtn{width:100%;min-height:50px}.summary-box{text-align:center;padding:10px}.preview-item{border-bottom:1px solid #ddd;padding:8px 0}</style></head><body><div class="container"><div class="hero"><h2>J82 Daily Manpower Reporting</h2><div>Where • What • How Many</div></div><div id="storageNotice" class="alert alert-warning d-none" role="alert">Auto-save isn't available in this preview window, so your entries won't be saved if you close it. Open the file directly in your browser (or download it) for auto-save to work.</div><div class="card p-3 mb-3"><div class="row g-2"><div class="col-md-4"><input id="date" type="date" class="form-control"></div><div class="col-md-4"><input id="foreman" class="form-control" placeholder="Foreman"></div><div class="col-md-4"><input id="attendance" type="number" min="0" class="form-control" placeholder="Attendance"></div></div></div><div class="card p-3 mb-3"><h5>Add Activity</h5><div class="row g-2"><div class="col-md-2"><select id="discipline" class="form-select"><option value="" disabled selected>Discipline</option><option>HVAC</option><option>Plumbing</option><option>Electrical</option></select></div><div class="col-md-2"><select id="tower" class="form-select"><option value="" disabled selected>Tower</option><option>Tower A</option><option>Tower B</option><option>Tower C</option></select></div><div class="col-md-2"><select id="level" class="form-select"><option value="" disabled selected>Level</option><option>BF</option><option>GF</option><option>L1</option><option>L2</option><option>L3</option><option>L4</option><option>L5</option><option>L6</option><option>L7</option><option>L8</option><option>L9</option><option>L10</option><option>L11</option><option>L12</option><option>L13</option><option>L14</option><option>L15</option><option>L16</option><option>L17</option><option>L18</option><option>L19</option><option>RF</option></select></div><div class="col-md-3"><input id="area" class="form-control" placeholder="Area"></div><div class="col-md-3"><input id="activity" class="form-control" placeholder="Activity"></div><div class="col-md-2"><input id="workers" type="number" min="1" class="form-control" placeholder="Workers"></div></div><button id="addBtn" class="btn btn-primary mt-3">+ Add Activity</button></div><div class="card p-3 mb-3"><h5>Activities (<span id="activityCount">0</span>)</h5><div id="activityList"></div></div><div class="row mb-3"><div class="col"><div class="card summary-box"><div>Attendance MH</div><h4 id="attendanceMH">0</h4></div></div><div class="col"><div class="card summary-box"><div>Allocated MH</div><h4 id="allocatedMH">0</h4></div></div><div class="col"><div class="card summary-box"><div>Balance MH</div><h4 id="balanceMH">0</h4></div></div></div><div class="card p-3 mb-3"><h5>Report Preview</h5><div id="reportPreview"></div></div><div class="d-grid gap-2"><button id="csvBtn" class="btn btn-success">Export CSV</button><button id="clearBtn" class="btn btn-danger">Clear Draft</button></div><div class="text-center text-muted mt-3">J82 Hills Edge Daily Reporting</div></div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>J82 Electrical Manpower Reporting</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+body{background:#f7f7f8;color:#212529;font-family:Segoe UI,Arial,sans-serif;padding:12px;font-size:15px}
+.container{max-width:900px}
+.page-head{border-bottom:2px solid #444;padding-bottom:10px;margin-bottom:18px}
+.page-head h1{font-size:20px;font-weight:600;margin:0}
+.page-head .sub{font-size:13px;color:#6c757d;margin-top:2px}
+.panel{background:#fff;border:1px solid #dee2e6;border-radius:5px;padding:14px;margin-bottom:14px}
+.panel h2{font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:#495057;margin:0 0 10px}
+.form-label{font-size:12px;color:#6c757d;margin-bottom:2px}
+.form-control,.form-select{font-size:15px;border-radius:3px}
+.btn{border-radius:4px;font-weight:500}
+.choice-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.choice-btn{width:100%;text-align:left;padding:11px 12px;border:1px solid #ced4da;background:#fff;color:#212529;border-radius:4px;font-size:14px;line-height:1.25}
+.choice-btn:hover{background:#f8f9fa}
+.choice-btn.selected{background:#e9f2ff;border-color:#0d6efd;color:#0b5ed7;font-weight:600}
+.plan-row{border:1px solid #e0e0e0;border-radius:4px;padding:10px 12px;margin-bottom:8px;background:#fff}
+.plan-row .title{font-weight:600;font-size:14px}
+.plan-row .meta{font-size:12px;color:#6c757d;margin-top:3px}
+.actual-wrap{margin-top:8px;display:flex;align-items:end;gap:10px}
+.actual-wrap .actual-box{max-width:150px}
+.summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.kpi{background:#fff;border:1px solid #dee2e6;border-radius:4px;padding:10px;text-align:center}
+.kpi .lbl{font-size:12px;color:#6c757d}
+.kpi .val{font-size:20px;font-weight:600;margin-top:2px}
+.small-note{font-size:12px;color:#6c757d}
+.mono{font-family:Consolas,monospace}
+.sticky-actions{position:sticky;bottom:8px;z-index:20;background:rgba(247,247,248,.97);padding:8px 0}
+.empty{color:#adb5bd;font-size:13px;font-style:italic}
+.footer{text-align:center;color:#adb5bd;font-size:12px;margin-top:20px}
+#loginGate{position:fixed;inset:0;background:#f7f7f8;z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+#loginGate .box{background:#fff;border:1px solid #dee2e6;border-radius:6px;padding:24px;max-width:340px;width:100%}
+#loginGate h2{font-size:16px;font-weight:600;margin:0 0 4px}
+#loginGate .sub{font-size:13px;color:#6c757d;margin-bottom:16px}
+#loginError{font-size:13px;color:#b02a37;margin-top:8px;display:none}
+.foreman-mode{border-left:4px solid #0d6efd}
+@media(max-width:600px){
+  .choice-grid{grid-template-columns:1fr}
+  .summary-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="loginGate">
+  <div class="box">
+    <h2>Sign In</h2>
+    <div class="sub">Engineer / planner sign-in. Foreman links open directly without sign-in.</div>
+    <label class="form-label" for="loginName">Name</label>
+    <input id="loginName" class="form-control mb-2" placeholder="Your name" autocomplete="off">
+    <label class="form-label" for="loginPin">PIN</label>
+    <input id="loginPin" type="password" inputmode="numeric" class="form-control mb-2" placeholder="PIN" autocomplete="off">
+    <button id="loginBtn" class="btn btn-primary w-100 mt-2">Continue</button>
+    <div id="loginError">Name or PIN not recognized. Check with your manager.</div>
+  </div>
+</div>
+
+<div class="container" id="appContainer" style="display:none">
+  <div class="page-head">
+    <h1 id="appTitle">J82 Electrical Manpower Reporting</h1>
+    <div class="sub" id="pageSub">Plan the work → send to foreman → record actual manpower</div>
+  </div>
+
+  <div id="storageNotice" class="alert alert-warning py-2 d-none small-note">
+    Auto-save isn't available in this window, so entries won't be saved if you close it.
+  </div>
+
+  <div id="modeNotice" class="alert alert-info small-note d-none"></div>
+
+  <div class="panel">
+    <h2>Report Details</h2>
+    <div class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label">Project</label>
+        <select id="project" class="form-select">
+          <option value="J82">J82 — Hills Edge</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Name</label>
+        <input id="userName" class="form-control" readonly>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Report Date</label>
+        <input id="date" type="date" class="form-control">
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="locationPanel">
+    <h2>Location</h2>
+    <div class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label">Tower</label>
+        <select id="tower" class="form-select">
+          <option value="" disabled selected>Select Tower</option>
+          <option>Tower A</option><option>Tower B</option><option>Tower C</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Level</label>
+        <select id="level" class="form-select">
+          <option value="" disabled selected>Select Level</option>
+          <option>BF</option><option>GF</option><option>PF</option>
+          <option>L1</option><option>L2</option><option>L3</option><option>L4</option>
+          <option>L5</option><option>L6</option><option>L7</option><option>L8</option>
+          <option>L9</option><option>L10</option><option>L11</option><option>L12</option>
+          <option>L13</option><option>L14</option><option>L15</option><option>L16</option>
+          <option>L17</option><option>L18</option><option>L19</option><option>RF</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Area</label>
+        <select id="area" class="form-select">
+          <option value="" disabled selected>Select Area</option>
+          <option>Flat</option><option>Staircase</option><option>Corridor</option>
+          <option>Common Area</option><option>External</option><option>Facade</option>
+          <option>Service Room</option><option>Others</option>
+        </select>
+      </div>
+    </div>
+    <div id="areaDetail" class="row g-2 mt-1"></div>
+  </div>
+
+  <div class="panel" id="masterPanel">
+    <h2>Master Activity</h2>
+    <div class="small-note mb-2">Select a master activity.</div>
+    <div id="masterButtons" class="choice-grid"></div>
+  </div>
+
+  <div class="panel d-none" id="activityPanel">
+    <h2 id="activityPanelTitle">Activity</h2>
+    <div class="small-note mb-2">Select the activity to add.</div>
+    <div id="activityButtons" class="choice-grid"></div>
+  </div>
+
+  <div class="panel d-none" id="plannedInputPanel">
+    <h2 id="selectedActivityTitle">Planned Manpower</h2>
+    <div id="selectionSummary" class="small-note mb-2"></div>
+    <div class="row g-2">
+      <div class="col-md-4">
+        <label class="form-label">Planned Manpower</label>
+        <input id="plannedManpower" type="number" min="1" class="form-control" placeholder="No. of labour">
+      </div>
+    </div>
+    <div class="mt-3">
+      <button id="addPlanBtn" class="btn btn-primary">Add to Plan</button>
+      <button id="cancelPlanBtn" class="btn btn-outline-secondary">Cancel</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Planned Activities <span class="small-note">(<span id="planCount">0</span>)</span></h2>
+    <div id="planList"><div class="empty">No planned activities yet.</div></div>
+  </div>
+
+  <div class="panel d-none foreman-mode" id="foremanPanel">
+    <h2>Foreman Actuals — Following Day</h2>
+    <div class="small-note mb-2">
+      Enter the actual manpower used/present for each planned activity.
+    </div>
+    <div id="actualList"></div>
+  </div>
+
+  <div class="panel" id="remarksPanel">
+    <h2>Unplanned Activity Remarks</h2>
+    <div class="small-note">
+      Enter unplanned work as one line per activity using this exact format:
+    </div>
+    <div class="mono mt-1 p-2 border rounded bg-light small-note">
+      A-L5-Facade-East | Conduit Installation | 4
+    </div>
+    <textarea id="unplannedRemarks" class="form-control mt-2" rows="4"
+      placeholder="A-L5-Facade-East | Conduit Installation | 4"></textarea>
+  </div>
+
+  <div class="summary-grid mb-3">
+    <div class="kpi"><div class="lbl">Planned Manpower</div><div class="val" id="plannedTotal">0</div></div>
+    <div class="kpi"><div class="lbl">Actual Manpower</div><div class="val" id="actualTotal">0</div></div>
+    <div class="kpi"><div class="lbl">Variance</div><div class="val" id="varianceTotal">0</div></div>
+  </div>
+
+  <div id="statusMsg" class="alert alert-info small-note d-none"></div>
+
+  <div class="sticky-actions">
+    <div class="d-grid gap-2" id="plannerActions">
+      <button id="sendForemanBtn" class="btn btn-primary">Send to Foreman</button>
+      <button id="exportBtn" class="btn btn-outline-secondary">Export Excel</button>
+      <button id="clearBtn" class="btn btn-outline-danger">Clear Draft</button>
+    </div>
+  </div>
+
+  <div class="footer" id="appFooter">J82 Hills Edge Electrical Reporting</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
-const KEY='J82_V7';
+const PROJECT_CODE='J82';
+const SITE_NAME='Hills Edge';
+const SHEET_WEBAPP_URL='https://script.google.com/macros/s/AKfycbwjABmd9F5fHAyGgnGzuJdI6vHSWotHwbI8-h5v-R_xcTeJ3Lgbvvs0rWmhoo0TnVZt2A/exec';
+const KEY='J82_ELECTRICAL_MANPOWER_V13';
+const MASTER_DATA={"Containment Installation":["Wall Marking","Electrical Conduiting","GI Box Installation / Fixing","Cable Tray Installation","Trunking Installation","Upstand Containment","Staircase Containment","Pipe Bending","Junction Box Opening","Welding Works","External / Facade Conduit Installation","Material Shifting"],"Cable Pulling & Wiring":["Cable Pulling","Wire Pulling for Power & Lighting","Floor Conduit Wiring","Flat Wiring","Riser Cable Pulling","Busbar Riser Installation","Cable Dressing & Tagging"],"DB, SMDB & Panels":["DB Installation","SMDB Installation","DB / ONU Enclosure Fixing","Panel Termination & Dressing","LCP Panel Installation","MCC Panel Installation","Substation Glanding"],"ELV & Fire Alarm Works":["Fire Alarm Wiring","Fire Alarm Device Installation","CCTV Wiring","CCTV Device Installation","Access Control Wiring","Access Control Device Installation","Audio Intercom Wiring","Audio Intercom Device Installation","GSM / Fibre Wiring","BMS Wiring","Data / ONU Wiring","Data Outlet Termination"],"Electrical Final Fix":["LSF Works","Modular Installation","Light Fixture Installation","Wiring Accessories Installation","Thermostat Installation","Facade Light Installation","Outlet Support Installation","Electrical Room Works"],"Earthing & Lightning Protection":["Earth Pit Installation","Earth Rod Fixing","Earth Bar Installation","Earth Continuity Bonding"],"Slab & Builder's Work":["Slab Works","Slab Conduiting","Thermocol Fixing","Thermocol Removal","Column Works","Concrete Chipping","Core Cutting","Material Shifting"],"Electrical Testing & Commissioning":["Circuit Continuity Test","Insulation Resistance Test","DB / SMDB Termination Test","Functional Testing"],"Rectification & Maintenance":["Rectification Works","Snag Clearing","Box Cleaning","Conduit Checking / Box Clearing","Protection Works","Maintenance Works","Housekeeping"],"Store & Material Handling":["Store Work","Material Receiving","Material Shifting","Material Segregation"]};
 const rows=[];
-const d=document.getElementById('date');
-const f=document.getElementById('foreman');
-const a=document.getElementById('attendance');
+let currentUser='';
+let reportMode='planner';
+let selectedMaster='';
+let selectedActivity='';
+let editingIndex=-1;
+let loginCounter=0;
+
+const $=id=>document.getElementById(id);
+const d=$('date'), userName=$('userName'), tower=$('tower'), level=$('level'), area=$('area'),
+      plannedManpower=$('plannedManpower'), remarks=$('unplannedRemarks');
+
 d.value=new Date().toISOString().split('T')[0];
 
 function storageSupported(){
-  try{
-    const testKey='__J82_STORAGE_TEST__';
-    window.localStorage.setItem(testKey,'1');
-    window.localStorage.removeItem(testKey);
-    return true;
-  }catch(e){
-    return false;
-  }
+  try{localStorage.setItem('__j82_test__','1');localStorage.removeItem('__j82_test__');return true;}
+  catch(e){return false;}
 }
 const hasStorage=storageSupported();
-if(!hasStorage){
-  document.getElementById('storageNotice').classList.remove('d-none');
-}
+if(!hasStorage) $('storageNotice').classList.remove('d-none');
 
 function save(){
-  if(!hasStorage) return;
+  if(!hasStorage)return;
   try{
-    localStorage.setItem(KEY,JSON.stringify({rows,date:d.value,foreman:f.value,attendance:a.value}));
-  }catch(e){
-    // storage blocked (e.g. sandboxed preview) - continue without autosave
+    localStorage.setItem(KEY,JSON.stringify({
+      user:currentUser,date:d.value,tower:tower.value,level:level.value,area:area.value,
+      remarks:remarks.value,rows
+    }));
+  }catch(e){}
+}
+
+function escapeHtml(s){
+  return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function levelPrefix(v){
+  const n=parseInt(String(v||'').replace('L',''),10);
+  return Number.isFinite(n)?String(n):'';
+}
+
+function getAreaDetails(){
+  const wrap=$('areaDetail');
+  if(area.value==='Flat'){
+    return {
+      areaType: area.value,
+      flatType: $('flatType')?.value||'',
+      flatNumber: $('flatNumber')?.value.trim()||'',
+      description: ''
+    };
   }
+  return {
+    areaType: area.value,
+    flatType: '',
+    flatNumber: '',
+    description: $('areaSpecific')?.value.trim()||''
+  };
 }
 
-function csvEscape(val){
-  const s=String(val===undefined||val===null?'':val);
-  if(/[",\n]/.test(s)){
-    return '"'+s.replace(/"/g,'""')+'"';
+function flatNumberValid(){
+  const info=getAreaDetails();
+  if(area.value!=='Flat')return true;
+  if(level.value==='RF')return info.flatType && !info.flatNumber;
+  if(!level.value || !info.flatType || !info.flatNumber)return false;
+  const p=levelPrefix(level.value);
+  return /^\d+$/.test(info.flatNumber) &&
+         info.flatNumber.length===p.length+2 &&
+         info.flatNumber.startsWith(p);
+}
+
+function renderAreaDetails(){
+  const wrap=$('areaDetail');
+  wrap.innerHTML='';
+  if(area.value==='Flat'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <select id="flatType" class="form-select">
+          <option value="" disabled selected>Select Flat Type</option>
+          <option>Studio</option><option>1BHK</option><option>2BHK</option>
+          <option>3BHK</option><option>4BHK</option><option>5BHK</option>
+          <option>Duplex</option><option>Penthouse</option><option>Other</option>
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Flat Number</label>
+        <input id="flatNumber" class="form-control" inputmode="numeric"
+               placeholder="Select level first" disabled>
+      </div>`;
+    updateFlatControl();
+  }else if(area.value==='Common Area'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <select id="areaSpecific" class="form-select">
+          <option value="" disabled selected>Select Type</option>
+          <option>Corridor</option><option>Lobby</option><option>Lift Lobby</option>
+          <option>Entrance</option><option>Other</option>
+        </select>
+      </div>`;
+  }else if(area.value==='External'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <select id="areaSpecific" class="form-select">
+          <option value="" disabled selected>Select Type</option>
+          <option>Parking</option><option>Boundary</option><option>External Utility</option>
+          <option>Road / Access</option><option>Other</option>
+        </select>
+      </div>`;
+  }else if(area.value==='Facade'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <select id="areaSpecific" class="form-select">
+          <option value="" disabled selected>Select Elevation</option>
+          <option>North</option><option>South</option><option>East</option><option>West</option>
+          <option>Podium</option><option>Other</option>
+        </select>
+      </div>`;
+  }else if(area.value==='Service Room'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <select id="areaSpecific" class="form-select">
+          <option value="" disabled selected>Select Room</option>
+          <option>LV Room</option><option>Substation</option>
+          <option>Telephone / GSM Room</option><option>Electrical Room</option>
+          <option>Water Meter Room</option><option>Store</option>
+        </select>
+      </div>`;
+  }else if(area.value==='Staircase'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <input id="areaSpecific" class="form-control" placeholder="e.g. Staircase 2">
+      </div>`;
+  }else if(area.value==='Corridor'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <input id="areaSpecific" class="form-control" placeholder="e.g. North Corridor">
+      </div>`;
+  }else if(area.value==='Others'){
+    wrap.innerHTML=`
+      <div class="col-md-4">
+        <label class="form-label">Area Type</label>
+        <input id="areaSpecific" class="form-control" placeholder="Specify area">
+      </div>`;
   }
-  return s;
-}
-
-function sanitizeFilePart(s){
-  const cleaned=String(s||'').trim().replace(/[^a-zA-Z0-9-]+/g,'_').replace(/^_+|_+$/g,'');
-  return cleaned||'Unknown';
-}
-
-function totals(){
-  const attendanceVal=Math.max(0,Number(a.value)||0);
-  const att=attendanceVal*8;
-  const alloc=rows.reduce((s,r)=>s+r.mh,0);
-  document.getElementById('attendanceMH').textContent=att;
-  document.getElementById('allocatedMH').textContent=alloc;
-  document.getElementById('balanceMH').textContent=att-alloc;
-  document.getElementById('activityCount').textContent=rows.length;
   save();
 }
 
-function render(){
-  const list=document.getElementById('activityList');
-  const prev=document.getElementById('reportPreview');
-  list.innerHTML='';
-  prev.innerHTML='';
-  rows.forEach(r=>{
-    const card=document.createElement('div');
-    card.className='card activity-card p-3 mb-2';
-    card.innerHTML='<span class="badge bg-primary">'+r.discipline+'</span><br><strong>📍 '+r.tower+' | '+r.level+'</strong><br>🏠 '+r.area+'<br>🔧 '+r.activity+'<br><span class="badge bg-success">'+r.workers+' Workers</span> <span class="badge bg-dark">'+r.mh+' MH</span>';
-    const dup=document.createElement('button');
-    dup.className='btn btn-sm btn-secondary mt-2 me-2';
-    dup.textContent='Duplicate';
-    dup.onclick=function(){
-      rows.push({...r,id:Date.now()+Math.random()});
-      render();
-    };
-    const del=document.createElement('button');
-    del.className='btn btn-sm btn-danger mt-2';
-    del.textContent='Delete';
-    del.onclick=function(){
-      const i=rows.indexOf(r);
-      if(i>-1){rows.splice(i,1);render();}
-    };
-    card.appendChild(document.createElement('br'));
-    card.appendChild(dup);
-    card.appendChild(del);
-    list.appendChild(card);
-    prev.innerHTML+='<div class="preview-item"><b>'+r.discipline+'</b> | '+r.tower+' | '+r.level+' | '+r.area+'<br>'+r.activity+' | '+r.workers+' Workers</div>';
-  });
-  totals();
+function updateFlatControl(){
+  const input=$('flatNumber');
+  if(!input)return;
+  input.disabled=!level.value;
+  if(!level.value){input.placeholder='Select level first';return;}
+  if(level.value==='RF'){
+    input.value='';
+    input.placeholder='No flat number for RF';
+    return;
+  }
+  input.placeholder=`e.g. ${levelPrefix(level.value)}01`;
 }
 
-document.getElementById('addBtn').addEventListener('click', function(){
-  const discipline=document.getElementById('discipline').value;
-  const tower=document.getElementById('tower').value;
-  const level=document.getElementById('level').value;
-  const area=document.getElementById('area').value.trim();
-  const activity=document.getElementById('activity').value.trim();
-  const workers=Number(document.getElementById('workers').value);
-
-  if(!discipline||!tower||!level){
-    alert('Please select Discipline, Tower and Level.');
-    return;
+function locationLabel(){
+  const info=getAreaDetails();
+  if(area.value==='Flat'){
+    if(info.flatType && info.flatNumber)return `${info.flatType} - Flat ${info.flatNumber}`;
+    if(info.flatType)return info.flatType;
+    return 'Flat';
   }
-  if(!area){
-    alert('Please enter an Area.');
-    return;
+  return info.description ? `${area.value} - ${info.description}` : area.value;
+}
+
+function locationReady(){
+  if(!tower.value || !level.value || !area.value)return false;
+  const info=getAreaDetails();
+  if(area.value==='Flat'){
+    if(!info.flatType)return false;
+    if(level.value==='RF')return !info.flatNumber;
+    return flatNumberValid();
   }
-  if(!activity||!(workers>=1)){
-    alert('Please enter an Activity and at least 1 Worker.');
-    return;
-  }
+  return !!info.description;
+}
 
-  rows.push({id:Date.now()+Math.random(),discipline,tower,level,area,activity,workers,mh:workers*8});
+function renderMasterButtons(){
+  const box=$('masterButtons');
+  box.innerHTML=Object.keys(MASTER_DATA).map(name=>
+    `<button type="button" class="choice-btn ${name===selectedMaster?'selected':''}" data-master="${escapeHtml(name)}">${escapeHtml(name)}</button>`
+  ).join('');
+  box.querySelectorAll('[data-master]').forEach(btn=>btn.addEventListener('click',()=>{
+    selectedMaster=btn.dataset.master;
+    selectedActivity='';
+    renderMasterButtons();
+    renderActivityButtons();
+  }));
+}
 
-  document.getElementById('area').value='';
-  document.getElementById('activity').value='';
-  document.getElementById('workers').value='';
-  render();
-});
+function renderActivityButtons(){
+  const panel=$('activityPanel');
+  if(!selectedMaster){panel.classList.add('d-none');return;}
+  panel.classList.remove('d-none');
+  $('activityPanelTitle').textContent=selectedMaster;
+  $('activityButtons').innerHTML=MASTER_DATA[selectedMaster].map(name=>
+    `<button type="button" class="choice-btn ${name===selectedActivity?'selected':''}" data-activity="${escapeHtml(name)}">${escapeHtml(name)}</button>`
+  ).join('');
+  $('activityButtons').querySelectorAll('[data-activity]').forEach(btn=>btn.addEventListener('click',()=>{
+    selectedActivity=btn.dataset.activity;
+    renderActivityButtons();
+    if(reportMode==='planner')openPlannedInput();
+  }));
+}
 
-a.addEventListener('input', totals);
-d.addEventListener('input', save);
-d.addEventListener('change', save);
-f.addEventListener('input', save);
-f.addEventListener('change', save);
+function openPlannedInput(){
+  if(!locationReady()){alert('Complete Tower, Level and Area details first.');return;}
+  $('plannedInputPanel').classList.remove('d-none');
+  $('selectedActivityTitle').textContent=selectedActivity;
+  $('selectionSummary').textContent=`${tower.value} / ${level.value} / ${locationLabel()} / ${selectedMaster}`;
+  plannedManpower.value='';
+  plannedManpower.focus();
+}
 
-document.getElementById('csvBtn').addEventListener('click', function(){
-  let csv='Date,Foreman,Discipline,Tower,Level,Area,Activity,Workers,ManHours\n';
-  rows.forEach(r=>{
-    csv+=[
-      csvEscape(d.value),
-      csvEscape(f.value),
-      csvEscape(r.discipline),
-      csvEscape(r.tower),
-      csvEscape(r.level),
-      csvEscape(r.area),
-      csvEscape(r.activity),
-      csvEscape(r.workers),
-      csvEscape(r.mh)
-    ].join(',')+'\n';
+function clearActivitySelection(){
+  selectedMaster='';
+  selectedActivity='';
+  $('plannedInputPanel').classList.add('d-none');
+  $('activityPanel').classList.add('d-none');
+  renderMasterButtons();
+}
+
+function addPlannedRow(){
+  if(!locationReady()){alert('Complete Tower, Level and Area details first.');return;}
+  if(!selectedMaster || !selectedActivity){alert('Select Master Activity and Activity first.');return;}
+  const pm=Number(plannedManpower.value);
+  if(!(pm>=1)){alert('Enter planned manpower of at least 1.');return;}
+  const info=getAreaDetails();
+  rows.push({
+    id:Date.now()+Math.random(),
+    project:$('project').value,
+    date:d.value,
+    engineer:currentUser,
+    tower:tower.value,
+    level:level.value,
+    area:area.value,
+    areaType:info.flatType || info.description || '',
+    flatNumber:info.flatNumber || '',
+    location:locationLabel(),
+    masterClass:selectedMaster,
+    activity:selectedActivity,
+    plannedManpower:pm,
+    actualManpower:''
   });
-  const blob=new Blob([csv],{type:'text/csv'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download='J82_Manpower_Report_'+sanitizeFilePart(d.value)+'_'+sanitizeFilePart(f.value)+'.csv';
-  link.click();
-});
+  renderLists();
+  clearActivitySelection();
+}
 
-document.getElementById('clearBtn').addEventListener('click', function(){
-  if(confirm("This will permanently delete today's draft (date, foreman, attendance and all activities). Continue?")){
-    if(hasStorage){
-      try{ localStorage.removeItem(KEY); }catch(e){}
+function renderLists(){
+  $('planCount').textContent=rows.length;
+  const plan=$('planList');
+  if(rows.length===0){
+    plan.innerHTML='<div class="empty">No planned activities yet.</div>';
+  }else{
+    plan.innerHTML=rows.map((r,i)=>`
+      <div class="plan-row">
+        <div class="title">${i+1}. ${escapeHtml(r.activity)}</div>
+        <div class="meta">${escapeHtml(r.tower)} / ${escapeHtml(r.level)} / ${escapeHtml(r.location)} · ${escapeHtml(r.masterClass)}</div>
+        <div class="meta">Planned manpower: <strong>${r.plannedManpower}</strong></div>
+        <div class="mt-2">
+          <button class="btn btn-sm btn-outline-danger" data-remove="${r.id}">Remove</button>
+        </div>
+      </div>`).join('');
+    plan.querySelectorAll('[data-remove]').forEach(btn=>btn.addEventListener('click',()=>{
+      const idx=rows.findIndex(r=>String(r.id)===String(btn.dataset.remove));
+      if(idx>-1){rows.splice(idx,1);renderLists();}
+    }));
+  }
+  renderActuals();
+  updateSummary();
+  save();
+}
+
+function renderActuals(){
+  const panel=$('foremanPanel');
+  const list=$('actualList');
+  if(reportMode!=='foreman'){panel.classList.add('d-none');return;}
+  panel.classList.remove('d-none');
+  if(rows.length===0){
+    list.innerHTML='<div class="empty">No planned activities were included in this foreman report.</div>';
+    return;
+  }
+  list.innerHTML=rows.map((r,i)=>`
+    <div class="plan-row">
+      <div class="title">${i+1}. ${escapeHtml(r.activity)}</div>
+      <div class="meta">${escapeHtml(r.tower)} / ${escapeHtml(r.level)} / ${escapeHtml(r.location)} · Planned: <strong>${r.plannedManpower}</strong></div>
+      <div class="actual-wrap">
+        <div class="actual-box">
+          <label class="form-label" for="actual_${r.id}">Actual Manpower</label>
+          <input id="actual_${r.id}" data-actual="${r.id}" class="form-control" type="number" min="0"
+                 value="${r.actualManpower}" placeholder="0">
+        </div>
+      </div>
+    </div>`).join('');
+  list.querySelectorAll('[data-actual]').forEach(inp=>inp.addEventListener('input',()=>{
+    const r=rows.find(x=>String(x.id)===String(inp.dataset.actual));
+    if(r)r.actualManpower=inp.value;
+    updateSummary();save();
+  }));
+}
+
+function updateSummary(){
+  const planned=rows.reduce((s,r)=>s+(Number(r.plannedManpower)||0),0);
+  const actual=rows.reduce((s,r)=>s+(Number(r.actualManpower)||0),0);
+  $('plannedTotal').textContent=planned;
+  $('actualTotal').textContent=actual;
+  $('varianceTotal').textContent=actual-planned;
+}
+
+function compactPlanForLink(){
+  return rows.map(r=>({
+    id:r.id,
+    p:r.project,
+    d:r.date,
+    t:r.tower,
+    l:r.level,
+    a:r.area,
+    at:r.areaType,
+    f:r.flatNumber,
+    loc:r.location,
+    m:r.masterClass,
+    x:r.activity,
+    pm:r.plannedManpower
+  }));
+}
+
+function encodePayload(obj){
+  const text=JSON.stringify(obj);
+  return encodeURIComponent(btoa(unescape(encodeURIComponent(text))));
+}
+
+function decodePayload(token){
+  const text=decodeURIComponent(escape(atob(decodeURIComponent(token))));
+  return JSON.parse(text);
+}
+
+function getForemanLink(){
+  const payload={
+    v:1,
+    mode:'foreman',
+    project:$('project').value,
+    date:d.value,
+    planner:currentUser,
+    rows:compactPlanForLink()
+  };
+  return location.origin+location.pathname+'#foreman='+encodePayload(payload);
+}
+
+function sendToForeman(){
+  if(rows.length===0){alert('Add at least one planned activity first.');return;}
+  if(!rows.every(r=>Number(r.plannedManpower)>=1)){alert('Every planned activity must have planned manpower.');return;}
+  const link=getForemanLink();
+  const message=
+    `J82 Electrical Manpower Plan - ${d.value}\n`+
+    `Prepared by: ${currentUser}\n`+
+    `Please open the following link tomorrow and enter actual manpower for each planned activity:\n\n${link}`;
+  window.open('https://wa.me/?text='+encodeURIComponent(message),'_blank','noopener');
+  showStatus('WhatsApp opened with the foreman link. Select the foreman and send it.','success');
+}
+
+function exportExcel(){
+  if(rows.length===0){alert('There are no activities to export.');return;}
+  if(typeof XLSX==='undefined'){alert('Excel export library could not load. Check your connection and try again.');return;}
+  const data=[
+    ['Project',$('project').value],
+    ['Prepared By',currentUser],
+    ['Report Date',d.value],
+    ['Mode',reportMode==='foreman'?'Foreman Actuals':'Planned Manpower'],
+    [],
+    ['Tower','Level','Area','Area Type','Flat Number','Location','Master Activity','Activity','Planned Manpower','Actual Manpower','Variance'],
+    ...rows.map(r=>[
+      r.tower,r.level,r.area,r.areaType,r.flatNumber,r.location,r.masterClass,r.activity,
+      Number(r.plannedManpower)||0,
+      r.actualManpower===''?'':Number(r.actualManpower),
+      r.actualManpower===''?'':Number(r.actualManpower)-Number(r.plannedManpower)
+    ]),
+    [],
+    ['Unplanned Activity Remarks',remarks.value||'']
+  ];
+  const ws=XLSX.utils.aoa_to_sheet(data);
+  ws['!cols']=[
+    {wch:11},{wch:9},{wch:16},{wch:18},{wch:12},
+    {wch:30},{wch:36},{wch:48},{wch:19},{wch:18},{wch:12}
+  ];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Electrical Report');
+  XLSX.writeFile(wb,`J82_Electrical_Manpower_${d.value}.xlsx`);
+  showStatus('Excel report exported successfully.','success');
+}
+
+function showStatus(msg,type='info'){
+  const box=$('statusMsg');
+  box.textContent=msg;
+  box.className='alert small-note '+(type==='success'?'alert-success':type==='danger'?'alert-danger':'alert-info');
+  box.classList.remove('d-none');
+}
+
+function applyForemanPayload(payload){
+  reportMode='foreman';
+  // Direct foreman links bypass the engineer authentication gate.
+  document.getElementById('loginGate').style.display='none';
+  $('pageSub').textContent='Foreman actual manpower entry — following day';
+  $('modeNotice').textContent='Foreman mode: no sign-in required. Enter actual manpower against the planned activities, add any unplanned work, then export the completed Excel report.';
+  $('modeNotice').classList.remove('d-none');
+  $('masterPanel').classList.add('d-none');
+  $('activityPanel').classList.add('d-none');
+  $('plannedInputPanel').classList.add('d-none');
+  $('locationPanel').classList.add('d-none');
+  $('plannerActions').innerHTML=`
+    <button id="exportBtn" class="btn btn-primary">Export Excel</button>
+    <button id="clearBtn" class="btn btn-outline-danger">Clear Draft</button>`;
+  $('exportBtn').addEventListener('click',exportExcel);
+  $('clearBtn').addEventListener('click',()=>{
+    if(confirm('This will permanently delete the current draft. Continue?')){
+      if(hasStorage)localStorage.removeItem(KEY);
+      location.reload();
     }
+  });
+  $('foremanPanel').classList.remove('d-none');
+  payload.rows.forEach((r,i)=>rows.push({
+    id:r.id||Date.now()+i,
+    project:r.p||payload.project,
+    date:r.d||payload.date,
+    engineer:payload.planner||'',
+    tower:r.t,
+    level:r.l,
+    area:r.a,
+    areaType:r.at||'',
+    flatNumber:r.f||'',
+    location:r.loc||'',
+    masterClass:r.m,
+    activity:r.x,
+    plannedManpower:Number(r.pm)||0,
+    actualManpower:''
+  }));
+  $('project').value=payload.project||'J82';
+  d.value=payload.date||d.value;
+  renderLists();
+}
+
+function readHashMode(){
+  const hash=location.hash||'';
+  if(!hash.startsWith('#foreman='))return null;
+  const token=hash.slice('#foreman='.length);
+  try{return decodePayload(token);}catch(e){return null;}
+}
+
+function jsonpLogin(name,pin){
+  return new Promise(function(resolve){
+    const cb='__loginCb'+(loginCounter++);
+    const script=document.createElement('script');
+    let settled=false;
+    function cleanup(){
+      delete window[cb];
+      if(script.parentNode)script.parentNode.removeChild(script);
+    }
+    const timer=setTimeout(function(){
+      if(settled)return;
+      settled=true;
+      cleanup();
+      resolve({valid:false,error:true});
+    },8000);
+
+    window[cb]=function(result){
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      cleanup();
+      resolve(result);
+    };
+
+    script.onerror=function(){
+      if(settled)return;
+      settled=true;
+      clearTimeout(timer);
+      cleanup();
+      resolve({valid:false,error:true});
+    };
+
+    script.src=SHEET_WEBAPP_URL+'?action=login&callback='+encodeURIComponent(cb)+
+      '&name='+encodeURIComponent(name)+'&pin='+encodeURIComponent(pin);
+
+    document.head.appendChild(script);
+  });
+}
+
+async function initAfterLogin(){
+  $('loginGate').style.display='none';
+  $('appContainer').style.display='';
+  userName.value=currentUser;
+
+  const payload=readHashMode();
+  if(payload && payload.mode==='foreman'){
+    applyForemanPayload(payload);
+    return;
+  }
+
+  if(hasStorage){
+    try{
+      const draft=JSON.parse(localStorage.getItem(KEY)||'null');
+      if(draft && (!draft.user || draft.user===currentUser)){
+        d.value=draft.date||d.value;
+        tower.value=draft.tower||'';
+        level.value=draft.level||'';
+        area.value=draft.area||'';
+        remarks.value=draft.remarks||'';
+        (draft.rows||[]).forEach(r=>rows.push(r));
+      }
+    }catch(e){}
+  }
+  renderAreaDetails();
+  renderMasterButtons();
+  renderLists();
+}
+
+$('area').addEventListener('change',()=>{renderAreaDetails();clearActivitySelection();});
+$('level').addEventListener('change',()=>{updateFlatControl();save();});
+$('tower').addEventListener('change',save);
+$('date').addEventListener('change',save);
+$('remarks').addEventListener('input',save);
+$('plannedManpower').addEventListener('keydown',e=>{if(e.key==='Enter')addPlannedRow();});
+$('addPlanBtn').addEventListener('click',addPlannedRow);
+$('cancelPlanBtn').addEventListener('click',clearActivitySelection);
+$('sendForemanBtn').addEventListener('click',sendToForeman);
+$('exportBtn').addEventListener('click',exportExcel);
+$('clearBtn').addEventListener('click',()=>{
+  if(confirm('This will permanently delete today\'s draft. Continue?')){
+    if(hasStorage)localStorage.removeItem(KEY);
     location.reload();
   }
 });
 
-if(hasStorage){
+async function doLogin(){
+  const name=$('loginName').value.trim();
+  const pin=$('loginPin').value.trim();
+  const err=$('loginError');
+  err.style.display='none';
+
+  if(!name||!pin){
+    err.textContent='Please enter your name and PIN.';
+    err.style.display='';
+    return;
+  }
+
+  const btn=$('loginBtn');
+  btn.disabled=true;
+  btn.textContent='Checking...';
+
   try{
-    const raw=localStorage.getItem(KEY);
-    if(raw){
-      const draft=JSON.parse(raw);
-      draft.rows.forEach(r=>rows.push(r));
-      d.value=draft.date||d.value;
-      f.value=draft.foreman||'';
-      a.value=draft.attendance||'';
-      render();
+    const result=await jsonpLogin(name,pin);
+    if(result&&result.valid){
+      currentUser=name;
+      try{
+        sessionStorage.setItem('J82_AUTH',JSON.stringify({name,pin}));
+      }catch(e){}
+      await initAfterLogin();
+    }else{
+      err.textContent=(result&&result.error)
+        ? "Couldn't reach the login server. Check your internet connection and try again."
+        : 'Name or PIN not recognized. Check with your manager.';
+      err.style.display='';
+    }
+  }catch(e){
+    err.textContent="Couldn't complete sign-in. Check your connection and try again.";
+    err.style.display='';
+  }finally{
+    btn.disabled=false;
+    btn.textContent='Continue';
+  }
+}
+
+function trySavedSession(){
+  try{
+    const auth=JSON.parse(sessionStorage.getItem('J82_AUTH')||'null');
+    if(auth&&auth.name&&auth.pin){
+      currentUser=auth.name;
+      return true;
     }
   }catch(e){}
+  return false;
+}
+
+$('loginBtn').addEventListener('click',doLogin);
+$('loginPin').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+
+// Foreman links are self-contained and do not require the engineer login.
+const directForemanPayload=readHashMode();
+if(directForemanPayload && directForemanPayload.mode==='foreman'){
+  initAfterLogin();
+}else{
+  // Normal engineer/planner use: login screen remains active.
+  trySavedSession() && initAfterLogin();
 }
 </script>
-</body></html>
+</body>
+</html>
